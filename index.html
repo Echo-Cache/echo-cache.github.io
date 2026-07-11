@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EchoCache — High-Performance Semantic Caching for LLM Apps</title>
+  <meta name="description" content="EchoCache is a lightweight Node.js SDK that intercepts LLM calls, checks prompt meanings using vector similarity, and returns cached responses in under 10ms.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- BACKGROUND INTERACTIVE VECTOR CANVAS -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container nav-wrapper">
+      <div class="logo">
+        <!-- EchoCache logo: curved arc with two dots (cream + green) -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 60 60" fill="none">
+          <!-- Dashed echo arc -->
+          <path d="M 14 46 Q 12 22 34 12" stroke="#8DB355" stroke-width="3.5" stroke-linecap="round" fill="none" stroke-dasharray="4 4" opacity="0.45"/>
+          <!-- Main solid arc -->
+          <path d="M 14 46 Q 12 22 34 12" stroke="#8DB355" stroke-width="4" stroke-linecap="round" fill="none"/>
+          <!-- Bottom dot (olive green) -->
+          <circle cx="14" cy="46" r="5.5" fill="#8DB355"/>
+          <!-- Top dot (warm cream) -->
+          <circle cx="34" cy="12" r="6.5" fill="#FFEA93"/>
+        </svg>
+        <span>EchoCache</span>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">Architecture</a></li>
+          <li><a href="#code">SDK Integration</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <a href="#pricing" class="btn btn-primary">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION (WITH SIDE-BY-SIDE INTERACTIVE SIMULATOR) -->
+  <section class="hero-section">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <span class="hero-tagline">Enterprise-Grade Caching SDK</span>
+        <h1 class="hero-title">
+          Stop paying twice for <span class="text-gradient">identical LLM queries.</span>
+        </h1>
+        <p class="hero-desc">
+          EchoCache intercepts your LLM calls, maps prompt semantics in a local vector space, and returns cached responses in under 10ms. Save 80% on API costs without blocking runtime execution.
+        </p>
+        <div class="hero-btns">
+          <a href="#features" class="btn btn-primary btn-lg">Explore Features</a>
+          <a href="#code" class="btn btn-secondary btn-lg">Setup Guide</a>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE DEMO (SIMULATOR) -->
+      <div id="demo" class="simulator-container">
+        <div class="sim-header">
+          <div class="sim-header-title">Simulation Environment — echocache-client</div>
+          <div class="sim-header-dots">
+            <div class="sim-header-dot"></div>
+            <div class="sim-header-dot"></div>
+            <div class="sim-header-dot"></div>
+          </div>
+        </div>
+        <div class="sim-layout">
+          
+          <!-- Terminal Main Console (Left Column) -->
+          <div class="sim-main">
+            <div class="sim-console" id="sim-console">
+              <div class="console-welcome">// EchoCache Initialized. Ready for prompt execution.
+// Select a suggested query in the sidebar to simulate Cache MISS/HIT states.</div>
+            </div>
+            <div class="sim-input-box">
+              <input type="text" class="sim-input" id="sim-input" readonly placeholder="Select a prompt below...">
+              <button class="sim-send-btn" id="sim-send-btn" disabled aria-label="Submit query">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Visual + Metrics Column (Right Column) -->
+          <div class="sim-sidebar-wrapper">
+            <!-- Vector cluster visualizer -->
+            <div class="sim-visual-column">
+              <span class="suggested-title" style="margin-bottom: 8px; width: 100%;">Vector Embedding Space</span>
+              <div class="vector-space-wrapper">
+                <svg class="vector-space-svg" id="vector-svg" viewBox="0 0 200 200">
+                  <!-- Grid Lines -->
+                  <line x1="0" y1="100" x2="200" y2="100" stroke="#1c1c1f" stroke-dasharray="2,2"/>
+                  <line x1="100" y1="0" x2="100" y2="200" stroke="#1c1c1f" stroke-dasharray="2,2"/>
+                  
+                  <!-- Cluster 1 (Tech) -->
+                  <circle cx="150" cy="50" r="3" fill="#27272a" opacity="0.4"/>
+                  <circle cx="155" cy="45" r="3" fill="#27272a" opacity="0.4"/>
+                  <circle cx="145" cy="55" r="3" fill="#27272a" opacity="0.4"/>
+                  
+                  <!-- Cluster 2 (Capitals) -->
+                  <circle cx="60" cy="140" r="3" fill="#27272a" opacity="0.4"/>
+                  <circle cx="55" cy="135" r="3" fill="#27272a" opacity="0.4"/>
+                  <circle cx="65" cy="145" r="3" fill="#27272a" opacity="0.4"/>
+                  <circle cx="50" cy="142" r="3" fill="#27272a" opacity="0.4"/>
+
+                  <!-- JavaScript Injections -->
+                  <g id="dynamic-vector-nodes"></g>
+                </svg>
+              </div>
+              <div class="stat-card" style="margin-top: 8px; width: 100%;">
+                <span class="stat-label">Vector Similarity Match</span>
+                <div class="stat-value" id="vector-score" style="font-size: 13px; font-weight: normal; color: var(--color-text-dim);">0.00 (No Match)</div>
+              </div>
+            </div>
+
+            <!-- Metrics Sidebar -->
+            <div class="sim-sidebar">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="stat-card">
+                  <span class="stat-label">Status</span>
+                  <div class="stat-value" id="stat-status" style="font-size: 14px; margin-top: 2px;">—</div>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Latency</span>
+                  <div class="stat-value" id="stat-latency" style="font-size: 14px; margin-top: 2px;">—</div>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <span class="stat-label">Estimated Savings</span>
+                <div class="stat-value" id="stat-saved-cost" style="color: var(--color-primary); font-size: 16px;">$0.00</div>
+              </div>
+
+              <div class="suggested-prompts">
+                <span class="suggested-title">Step 1: Run query</span>
+                <button class="suggested-btn pulse-btn" id="prompt-a-btn" onclick="runPrompt(0)">"What is the capital of India?"</button>
+                
+                <span class="suggested-title" style="margin-top: 8px;">Step 2: Similar query</span>
+                <button class="suggested-btn" id="prompt-b-btn" onclick="runPrompt(1)" disabled>"Can you tell me India's capital?"</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES GRID -->
+  <section id="features" style="padding: 80px 0;">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Mechanics</span>
+        <h2 class="section-title">Designed for distinct performance</h2>
+        <p class="section-desc">Traditional exact-match caches fail on LLMs due to slight wording adjustments. EchoCache maps inputs into vector spaces to capture semantic equivalence.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Bento Card 1: Vector Similarity -->
+        <div class="bento-card bento-card-lg">
+          <div>
+            <svg class="bento-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h3 class="bento-title">Vector Similarity Lookup</h3>
+            <p class="bento-desc">EchoCache maps prompt text through sentence embeddings, executing vector distance operations to identify matches at a high confidence score threshold (e.g. 0.92) even if the syntax is completely rephrased.</p>
+          </div>
+          <div class="bento-visual">
+            <div style="color: var(--color-text-dim)">// Vector payload similarity comparison</div>
+            <div>prompt1: "Explain quantum mechanics for kids"</div>
+            <div>prompt2: "How would you explain quantum physics to a child?"</div>
+            <div style="color: var(--color-primary); font-weight: 700;">Similarity Score: 0.95 (Cache Hit)</div>
+          </div>
+        </div>
+
+        <!-- Bento Card 2: Quantization (Animated) -->
+        <div class="bento-card" id="quant-card">
+          <div>
+            <svg class="bento-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <h3 class="bento-title">int8 Quantized Payloads</h3>
+            <p class="bento-desc">Compresses vector dimensions using 8-bit scalar quantization. Fits 4x more items inside local cache indexes, minimizing memory usage and preventing system latency degradation.</p>
+          </div>
+          <div class="bento-visual" style="gap: 10px;">
+            <!-- Uncompressed row -->
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:2px;">
+              <span style="color: var(--color-text-muted);">Uncompressed</span>
+              <span id="quant-uncomp-label" style="font-weight:700; color: #FFEA93; font-family: var(--font-mono);">0K keys</span>
+            </div>
+            <div class="compress-bar" style="height: 8px; border-radius: 3px; position:relative; overflow:hidden;">
+              <div id="quant-uncomp-bar" style="height:100%; width:0%; transition: width 60ms linear; background: linear-gradient(90deg, #FFEA93 0%, #D90000 100%); border-radius:3px;"></div>
+            </div>
+            <!-- Quantized row -->
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-top:4px; margin-bottom:2px;">
+              <span style="color: var(--color-text-muted);">Quantized <span style="font-family:var(--font-mono); color: var(--color-primary);">int8</span></span>
+              <span id="quant-comp-label" style="font-weight:700; color: var(--color-primary); font-family: var(--font-mono);">0K keys</span>
+            </div>
+            <div class="compress-bar" style="height: 8px; border-radius: 3px; position:relative; overflow:hidden;">
+              <div id="quant-comp-bar" style="height:100%; width:0%; transition: width 60ms linear; background: #8DB355; border-radius:3px;"></div>
+            </div>
+            <!-- Legend -->
+            <div style="display:flex; gap:12px; margin-top:6px;">
+              <span style="font-size:10px; color:var(--color-text-dim);">● Uncompressed: 250K max</span>
+              <span style="font-size:10px; color:var(--color-primary);">● int8: 1.0M max (4x)</span>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Bento Card 3: Non-Blocking -->
+        <div class="bento-card">
+          <div>
+            <svg class="bento-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16" />
+            </svg>
+            <h3 class="bento-title">Parallel Background Threading</h3>
+            <p class="bento-desc">EchoCache pushes new completions to Qdrant asynchronously inside background processes. Clients receive generated answers instantly; writes never block the thread runtime.</p>
+          </div>
+          <div class="bento-visual">
+            <div>1. Client Prompt -> SDK</div>
+            <div>2. LLM miss -> Generate Response (1800ms)</div>
+            <div style="color: var(--color-accent);">3. Return answer to user (instant)</div>
+            <div style="color: var(--color-text-dim);">4. Background sync payload to Qdrant (parallel thread)</div>
+          </div>
+        </div>
+
+        <!-- Bento Card 4: SDK -->
+        <div class="bento-card bento-card-lg">
+          <div>
+            <svg class="bento-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="bento-title">5-Minute SDK Integration</h3>
+            <p class="bento-desc">Integrate EchoCache with your existing OpenAI or Gemini client calls using our drop-in wrapper class. Zero architectural refactoring or custom query layers required.</p>
+          </div>
+          <div class="bento-visual">
+            <div style="color: var(--color-text-dim)">// Wraps any asynchronous LLM calling function</div>
+            <div><span style="color: var(--color-primary);">const</span> cache = <span style="color: var(--color-primary);">new</span> EchoCache(<span style="color: var(--color-text-muted);">"ec_prod_key"</span>);</div>
+            <div><span style="color: var(--color-primary);">const</span> response = <span style="color: var(--color-primary);">await</span> cache.ask(prompt, fallbackLlmCall);</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE DIAGRAM -->
+  <section id="how-it-works" class="arch-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">System Design</span>
+        <h2 class="section-title">Query Lifecycle</h2>
+        <p class="section-desc">How EchoCache intercepts, evaluates, and updates completions under the hood.</p>
+      </div>
+
+      <div class="arch-flow">
+        <div class="arch-node">
+          <div class="arch-node-title">1. Query Interceptor</div>
+          <div class="arch-node-desc">Receives prompt. Maps sentence embedding dimensions.</div>
+        </div>
+        <div class="arch-arrow">
+          <span>checkCache()</span>
+          <div class="arch-arrow-line"></div>
+        </div>
+        <div class="arch-node">
+          <div class="arch-node-title">2. Semantic Router</div>
+          <div class="arch-node-desc">Evaluates vector distance against Qdrant index.</div>
+        </div>
+        <div class="arch-arrow">
+          <span>HIT / MISS</span>
+          <div class="arch-arrow-line"></div>
+        </div>
+        <div class="arch-node">
+          <div class="arch-node-title">3. Executor</div>
+          <div class="arch-node-desc">Serves cache payload OR executes API call & background syncs.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SDK INTEGRATION -->
+  <section id="code" class="code-section">
+    <div class="container">
+      <div class="code-layout">
+        <div>
+          <h2 class="code-info-title">Zero boilerplate setup</h2>
+          <p class="code-info-desc">Import, initialize, and query. EchoCache wraps existing SDK clients cleanly.</p>
+          <div class="code-steps">
+            <div class="code-step">
+              <div class="code-step-num">1</div>
+              <div class="code-step-text">Install the dependency package into your codebase.</div>
+            </div>
+            <div class="code-step">
+              <div class="code-step-num">2</div>
+              <div class="code-step-text">Initialize the Client with your validated API credential.</div>
+            </div>
+            <div class="code-step">
+              <div class="code-step-num">3</div>
+              <div class="code-step-text">Query semantic hits using `.ask()`.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-window">
+          <div class="code-tabs">
+            <button class="code-tab active" onclick="toggleCodeTab('node')">index.js</button>
+            <button class="code-tab" onclick="toggleCodeTab('install')">Terminal</button>
+          </div>
+          
+          <pre class="code-content" id="code-content-node"><code><span class="hljs-keyword">import</span> { EchoCache } <span class="hljs-keyword">from</span> <span class="hljs-string">"echocache-node"</span>;
+
+<span class="hljs-comment">// Initialize EchoCache client middleware</span>
+<span class="hljs-keyword">const</span> cache = <span class="hljs-keyword">new</span> <span class="hljs-attr">EchoCache</span>(<span class="hljs-string">"ec_prod_d880430bbc14..."</span>);
+
+<span class="hljs-comment">// Define your standard client query execution function</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title class_">openaiWrapper</span>(<span class="hljs-params">prompt</span>) {
+  <span class="hljs-keyword">const</span> completion = <span class="hljs-keyword">await</span> openai.chat.completions.create({
+    <span class="hljs-attr">model</span>: <span class="hljs-string">"gpt-4o"</span>,
+    <span class="hljs-attr">messages</span>: [{ <span class="hljs-attr">role</span>: <span class="hljs-string">"user"</span>, <span class="hljs-attr">content</span>: prompt }]
+  });
+  <span class="hljs-keyword">return</span> completion.choices[<span class="hljs-number">0</span>].message.content;
+}
+
+<span class="hljs-comment">// Resolve query using semantic caching</span>
+<span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> cache.ask(
+  <span class="hljs-string">"What is the capital of India?"</span>,
+  openaiWrapper
+);</code></pre>
+
+          <pre class="code-content" id="code-content-install" style="display: none;"><code><span class="hljs-comment"># Install via npm</span>
+npm install echocache-node
+
+<span class="hljs-comment"># Install via pnpm</span>
+pnpm add echocache-node
+
+<span class="hljs-comment"># Install via yarn</span>
+yarn add echocache-node</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING SECTION -->
+  <section id="pricing" class="pricing-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Pricing</span>
+        <h2 class="section-title">Start free. Scale when ready.</h2>
+        <p class="section-desc">Every plan includes full SDK access and semantic cache capabilities. Upgrade only when your usage demands it.</p>
+      </div>
+
+      <!-- Billing Toggle -->
+      <div class="pricing-toggle-wrapper">
+        <span class="pricing-toggle-label" id="toggle-monthly-label" style="color: var(--color-text);">Monthly</span>
+        <button class="pricing-toggle" id="billing-toggle" onclick="toggleBilling()" aria-label="Toggle annual billing">
+          <div class="pricing-toggle-thumb" id="toggle-thumb"></div>
+        </button>
+        <span class="pricing-toggle-label" id="toggle-annual-label" style="color: var(--color-text-dim);">Annual <span class="pricing-save-badge">Save 20%</span></span>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="pricing-grid">
+
+        <!-- DEMO -->
+        <div class="pricing-card">
+          <div class="pricing-card-header">
+            <div class="pricing-plan-name">Demo</div>
+            <div class="pricing-price-block">
+              <span class="pricing-currency">$</span>
+              <span class="pricing-amount">0</span>
+              <span class="pricing-period">/mo</span>
+            </div>
+            <p class="pricing-tagline">Try it — no card needed.</p>
+          </div>
+          <a href="#code" class="btn btn-secondary pricing-cta">Start Free</a>
+          <ul class="pricing-features">
+            <li><span class="feat-check">✓</span> 1,000 cache requests / mo</li>
+            <li><span class="feat-check">✓</span> 200 stored cache entries</li>
+            <li><span class="feat-check">✓</span> 1 project</li>
+            <li><span class="feat-check">✓</span> Full SDK access</li>
+            <li><span class="feat-x">✗</span> Analytics dashboard</li>
+            <li><span class="feat-x">✗</span> Email support</li>
+          </ul>
+        </div>
+
+        <!-- STARTER -->
+        <div class="pricing-card">
+          <div class="pricing-card-header">
+            <div class="pricing-plan-name">Starter</div>
+            <div class="pricing-price-block">
+              <span class="pricing-currency">$</span>
+              <span class="pricing-amount" data-monthly="9" data-annual="7">9</span>
+              <span class="pricing-period">/mo</span>
+            </div>
+            <p class="pricing-tagline">For indie devs with real traffic.</p>
+          </div>
+          <a href="#" class="btn btn-secondary pricing-cta">Get Started</a>
+          <ul class="pricing-features">
+            <li><span class="feat-check">✓</span> 50,000 cache requests / mo</li>
+            <li><span class="feat-check">✓</span> 5,000 stored cache entries</li>
+            <li><span class="feat-check">✓</span> 1 project</li>
+            <li><span class="feat-check">✓</span> Full SDK access</li>
+            <li><span class="feat-check">✓</span> Usage analytics</li>
+            <li><span class="feat-check">✓</span> Email support</li>
+          </ul>
+        </div>
+
+        <!-- SCALE (FEATURED) -->
+        <div class="pricing-card pricing-card-featured">
+          <div class="pricing-popular-badge">Most Popular</div>
+          <div class="pricing-card-header">
+            <div class="pricing-plan-name">Scale</div>
+            <div class="pricing-price-block">
+              <span class="pricing-currency">$</span>
+              <span class="pricing-amount" data-monthly="49" data-annual="39">49</span>
+              <span class="pricing-period">/mo</span>
+            </div>
+            <p class="pricing-tagline">For growing LLM products.</p>
+          </div>
+          <a href="#" class="btn btn-primary pricing-cta">Get Started</a>
+          <ul class="pricing-features">
+            <li><span class="feat-check">✓</span> 500,000 cache requests / mo</li>
+            <li><span class="feat-check">✓</span> 50,000 stored cache entries</li>
+            <li><span class="feat-check">✓</span> 5 projects</li>
+            <li><span class="feat-check">✓</span> Full SDK access</li>
+            <li><span class="feat-check">✓</span> Advanced analytics + cost report</li>
+            <li><span class="feat-check">✓</span> Priority email support (24h SLA)</li>
+          </ul>
+        </div>
+
+        <!-- PAY-AS-YOU-GO -->
+        <div class="pricing-card">
+          <div class="pricing-card-header">
+            <div class="pricing-plan-name">Pay-as-you-go</div>
+            <div class="pricing-price-block">
+              <span class="pricing-currency">$</span>
+              <span class="pricing-amount" style="font-size: 32px;">0.0015</span>
+              <span class="pricing-period">/req</span>
+            </div>
+            <p class="pricing-tagline">Burst traffic, no ceilings.</p>
+          </div>
+          <a href="#" class="btn btn-secondary pricing-cta">Get Started</a>
+          <ul class="pricing-features">
+            <li><span class="feat-check">✓</span> Unlimited cache requests</li>
+            <li><span class="feat-check">✓</span> $0.005 per 1K entries stored</li>
+            <li><span class="feat-check">✓</span> 10 projects</li>
+            <li><span class="feat-check">✓</span> Full SDK access</li>
+            <li><span class="feat-check">✓</span> Advanced analytics + cost report</li>
+            <li><span class="feat-check">✓</span> Email support</li>
+          </ul>
+        </div>
+
+        <!-- SELF-HOSTED (WIDE) -->
+        <div class="pricing-card pricing-card-selfhosted">
+          <div class="pricing-selfhosted-inner">
+            <div>
+              <div class="pricing-plan-name" style="display: flex; align-items: center; gap: 10px;">
+                Self-Hosted
+                <span class="pricing-opensource-badge">Open Source</span>
+              </div>
+              <p class="pricing-tagline" style="margin-top: 8px;">Deploy on your own infra. Bring your own Qdrant cluster.</p>
+            </div>
+            <div class="pricing-selfhosted-options">
+              <div class="pricing-selfhosted-option">
+                <div class="pricing-selfhosted-option-name">Community</div>
+                <div class="pricing-selfhosted-option-price">Free forever</div>
+                <p class="pricing-selfhosted-option-desc">Core caching engine. No license key required.</p>
+                <a href="https://github.com" target="_blank" class="btn btn-secondary" style="margin-top: 12px; width: 100%; justify-content: center;">View on GitHub</a>
+              </div>
+              <div class="pricing-selfhosted-divider"></div>
+              <div class="pricing-selfhosted-option">
+                <div class="pricing-selfhosted-option-name">Pro License</div>
+                <div class="pricing-selfhosted-option-price">$29<span style="font-size: 14px; color: var(--color-text-dim);">/mo</span></div>
+                <p class="pricing-selfhosted-option-desc">Adds dashboard UI, team access, and usage analytics.</p>
+                <a href="#" class="btn btn-secondary" style="margin-top: 12px; width: 100%; justify-content: center;">Get Pro License</a>
+              </div>
+            </div>
+          </div>
+          <ul class="pricing-features pricing-features-horizontal">
+            <li><span class="feat-check">✓</span> Unlimited requests</li>
+            <li><span class="feat-check">✓</span> Your own Qdrant</li>
+            <li><span class="feat-check">✓</span> Full data ownership</li>
+            <li><span class="feat-check">✓</span> Docker Compose setup</li>
+            <li><span class="feat-check">✓</span> Air-gap compatible</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Cost Savings Banner -->
+      <div class="pricing-savings-banner">
+        <div class="pricing-savings-inner">
+          <div class="pricing-savings-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <div class="pricing-savings-title">EchoCache pays for itself in the first hit.</div>
+            <div class="pricing-savings-desc">GPT-4o costs ~$0.015 per cached output token. A single 1,000-token response served from cache saves $0.015. At 1,000 hits/day, that's <strong style="color: var(--color-accent);">$450/mo saved</strong> on Starter pricing of $9/mo.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" class="faq-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">FAQ</span>
+        <h2 class="section-title">Common developer questions</h2>
+        <p class="section-desc">Technical inquiries regarding prompt matching pipelines and performance margins.</p>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            What is the actual latency overhead of checking the cache?
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-answer">
+            Cache evaluations resolve in under 12ms. We leverage fast payload index filters on Qdrant which maps vector distances in memory, ensuring that checking the cache has a negligible impact on overall execution time.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            How are cache payloads saved synchronously without blocking?
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-answer">
+            When a query misses the cache, the SDK triggers your fallback LLM function. Once the response returns, the SDK hands the response back to your client instantly, and schedules the cache update in a background thread using a non-awaited async function.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            Is it possible to fine-tune the similarity threshold?
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-answer">
+            Yes. You can pass a threshold float (e.g. `similarityThreshold: 0.95`) inside the options parameter during EchoCache initialization to adjust how closely prompt vector clusters must align.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-layout">
+        <div class="footer-info">
+          <div class="logo">
+            <!-- EchoCache logo: curved arc with two dots (cream + green) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 60 60" fill="none">
+              <path d="M 14 46 Q 12 22 34 12" stroke="#8DB355" stroke-width="3.5" stroke-linecap="round" fill="none" stroke-dasharray="4 4" opacity="0.45"/>
+              <path d="M 14 46 Q 12 22 34 12" stroke="#8DB355" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <circle cx="14" cy="46" r="5.5" fill="#8DB355"/>
+              <circle cx="34" cy="12" r="6.5" fill="#FFEA93"/>
+            </svg>
+            <span>EchoCache</span>
+          </div>
+          <p>High-performance semantic caching SDKs. Minimize API tokens, reduce overhead latency, and secure robust local caching pipelines.</p>
+        </div>
+        <div class="footer-links-grid">
+          <div class="footer-column">
+            <h4>Software</h4>
+            <ul>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#demo">Live Demo</a></li>
+              <li><a href="#code">Integrations</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>Resources</h4>
+            <ul>
+              <li><a href="#code">Developer Portal</a></li>
+              <li><a href="https://qdrant.tech" target="_blank">Qdrant Cloud</a></li>
+              <li><a href="#faq">FAQ</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>Legal</h4>
+            <ul>
+              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 EchoCache. All rights reserved.</span>
+        <span>Enterprise Semantic Infrastructure</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- INTERACTIVE VECTOR CANVAS LOGIC -->
+  <script>
+    (function() {
+      const canvas = document.getElementById('bg-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+      
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+      
+      // 1. Neural Network Particles (Latent Space)
+      let particles = [];
+      const maxParticles = 65;
+      
+      class Particle {
+        constructor() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          this.vx = (Math.random() - 0.5) * 0.25;
+          this.vy = (Math.random() - 0.5) * 0.25;
+          this.radius = Math.random() * 1.5 + 0.8;
+          this.pulseIntensity = 0;
+          // Alternate base color between Olive Green and Warm Cream
+          this.colorBase = Math.random() > 0.5 ? 'rgba(141, 179, 85,' : 'rgba(255, 234, 147,';
+        }
+        
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          
+          if (this.x < 0 || this.x > width) this.vx *= -1;
+          if (this.y < 0 || this.y > height) this.vy *= -1;
+          
+          if (this.pulseIntensity > 0) {
+            this.pulseIntensity -= 0.02;
+          }
+        }
+        
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius + this.pulseIntensity * 3, 0, Math.PI * 2);
+          if (this.pulseIntensity > 0) {
+            ctx.fillStyle = `${this.colorBase} ${0.15 + this.pulseIntensity * 0.35})`;
+          } else {
+            ctx.fillStyle = `${this.colorBase} 0.12)`;
+          }
+          ctx.fill();
+        }
+      }
+      
+      for (let i = 0; i < maxParticles; i++) {
+        particles.push(new Particle());
+      }
+      
+      // 2. Echo Sound Waves (Dynamic wavefronts propagating from interaction)
+      let ripples = [];
+      
+      class Ripple {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.radius = 0;
+          this.maxRadius = 240;
+          this.speed = 3.5;
+          this.alpha = 0.85;
+        }
+        
+        update() {
+          this.radius += this.speed;
+          this.alpha = 1 - (this.radius / this.maxRadius);
+        }
+        
+        draw() {
+          const offsets = [0, -22, -44];
+          offsets.forEach((offset) => {
+            let r = this.radius + offset;
+            if (r > 0) {
+              let currentAlpha = this.alpha * (1 - (offset / -44) * 0.4);
+              
+              // Left sound wave wavefront arc (135 deg to 225 deg) - Olive Green
+              ctx.beginPath();
+              ctx.arc(this.x, this.y, r, Math.PI * 0.75, Math.PI * 1.25);
+              ctx.strokeStyle = `rgba(141, 179, 85, ${currentAlpha * 0.08})`;
+              ctx.lineWidth = 1.8;
+              ctx.stroke();
+
+              // Right sound wave wavefront arc (-45 deg to 45 deg) - Warm Cream
+              ctx.beginPath();
+              ctx.arc(this.x, this.y, r, -Math.PI * 0.25, Math.PI * 0.25);
+              ctx.strokeStyle = `rgba(255, 234, 147, ${currentAlpha * 0.08})`;
+              ctx.lineWidth = 1.8;
+              ctx.stroke();
+            }
+          });
+        }
+      }
+      
+      let mouse = { x: null, y: null, radius: 140 };
+      let lastRippleTime = 0;
+      
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        
+        // Emit ripple periodically during mouse movements (throttle to 180ms)
+        const now = Date.now();
+        if (now - lastRippleTime > 180) {
+          ripples.push(new Ripple(mouse.x, mouse.y));
+          lastRippleTime = now;
+        }
+      });
+      
+      window.addEventListener('click', (e) => {
+        ripples.push(new Ripple(e.clientX, e.clientY));
+      });
+      
+      window.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+      
+      // 3. Audio Waveforms (Horizontal ribbons undulating like a frequency sound wave)
+      let phase = 0;
+      function drawAudioWaveforms() {
+        const baseline = height * 0.5;
+        const wavesConfig = [
+          { freq: 0.003, amp: 35, speed: 0.015, color: 'rgba(141, 179, 85, 0.012)' }, // Olive Green
+          { freq: 0.005, amp: 55, speed: -0.01, color: 'rgba(255, 234, 147, 0.01)' }, // Warm Cream
+          { freq: 0.002, amp: 20, speed: 0.02, color: 'rgba(141, 179, 85, 0.006)' } // Olive Green
+        ];
+        
+        wavesConfig.forEach((w) => {
+          ctx.beginPath();
+          ctx.strokeStyle = w.color;
+          ctx.lineWidth = 1.5;
+          for (let x = 0; x < width; x += 15) {
+            const y = baseline + Math.sin(x * w.freq + phase * w.speed) * w.amp * Math.sin(phase * 0.002 + x * 0.0005);
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        });
+        phase += 1;
+      }
+      
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        
+        // Render waveforms in the background first
+        drawAudioWaveforms();
+        
+        // Update and draw ripples
+        for (let r = ripples.length - 1; r >= 0; r--) {
+          ripples[r].update();
+          if (ripples[r].alpha <= 0) {
+            ripples.splice(r, 1);
+          } else {
+            ripples[r].draw();
+          }
+        }
+        
+        // Update and draw neural network nodes
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+          particles[i].draw();
+          
+          // Check collision with ripples (lighting them up on sound propagation)
+          ripples.forEach(rip => {
+            let dx = rip.x - particles[i].x;
+            let dy = rip.y - particles[i].y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (Math.abs(dist - rip.radius) < 6) {
+              particles[i].pulseIntensity = rip.alpha;
+            }
+          });
+          
+          // Warp towards mouse cursor
+          if (mouse.x !== null && mouse.y !== null) {
+            let dx = mouse.x - particles[i].x;
+            let dy = mouse.y - particles[i].y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < mouse.radius) {
+              let force = (mouse.radius - dist) / mouse.radius;
+              particles[i].x += (dx / dist) * force * 0.4;
+              particles[i].y += (dy / dist) * force * 0.4;
+            }
+          }
+          
+          // Draw connections between neighboring network nodes
+          for (let j = i + 1; j < particles.length; j++) {
+            let dx = particles[i].x - particles[j].x;
+            let dy = particles[i].y - particles[j].y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 110) {
+              let alpha = (110 - dist) / 110 * 0.05;
+              
+              // Boost link brightness if either node is currently pulsed by an echo wave
+              let pulseBoost = Math.max(particles[i].pulseIntensity, particles[j].pulseIntensity);
+              if (pulseBoost > 0) {
+                alpha = (110 - dist) / 110 * (0.05 + pulseBoost * 0.15);
+              } else if (mouse.x !== null && mouse.y !== null) {
+                let mdx1 = mouse.x - particles[i].x;
+                let mdy1 = mouse.y - particles[i].y;
+                let mdist1 = Math.sqrt(mdx1 * mdx1 + mdy1 * mdy1);
+                if (mdist1 < mouse.radius) {
+                  alpha = (110 - dist) / 110 * 0.12;
+                }
+              }
+              
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              
+              if (pulseBoost > 0) {
+                ctx.strokeStyle = `rgba(141, 179, 85, ${alpha})`;
+              } else {
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+              }
+              ctx.lineWidth = pulseBoost > 0 ? 0.8 : 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+        
+        requestAnimationFrame(animate);
+      }
+      
+      animate();
+    })();
+  </script>
+
+  <!-- QUANTIZED CARD ANIMATION -->
+  <script>
+    (function() {
+      const uncompBar = document.getElementById('quant-uncomp-bar');
+      const compBar = document.getElementById('quant-comp-bar');
+      const uncompLabel = document.getElementById('quant-uncomp-label');
+      const compLabel = document.getElementById('quant-comp-label');
+      if (!uncompBar || !compBar) return;
+
+      let animFrame = null;
+      let startTime = null;
+      const DURATION = 3200; // ms for one full fill cycle
+      const PAUSE = 1400;    // ms to hold at end before reset
+      let phase = 'fill';    // 'fill' | 'pause' | 'reset'
+      let pauseStart = null;
+
+      function formatKeys(ratio) {
+        // Uncompressed max 250K; quantized max 1000K
+        return null; // per-bar handled in tick
+      }
+
+      function tick(timestamp) {
+        if (phase === 'fill') {
+          if (!startTime) startTime = timestamp;
+          const elapsed = timestamp - startTime;
+          const t = Math.min(elapsed / DURATION, 1);
+          const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+          // Uncompressed: fills to 100% — cream→red gradient is baked into the background; width drives the reveal
+          const uncompPct = eased * 100;
+          uncompBar.style.width = `${uncompPct}%`;
+          const uncompKeys = Math.round(eased * 250);
+          uncompLabel.textContent = uncompKeys >= 1000 ? `${(uncompKeys/1000).toFixed(1)}M keys` : `${uncompKeys}K keys`;
+
+          // Quantized: fills to 25% (same 250K = 25% of 1M capacity) = green and stops
+          const compPct = eased * 25;
+          compBar.style.width = `${compPct}%`;
+          const compKeys = Math.round(eased * 250);
+          compLabel.textContent = compKeys >= 1000 ? `${(compKeys/1000).toFixed(1)}M keys` : `${compKeys}K keys`;
+
+          if (t >= 1) {
+            phase = 'pause';
+            pauseStart = timestamp;
+          }
+        } else if (phase === 'pause') {
+          if (timestamp - pauseStart >= PAUSE) {
+            phase = 'reset';
+            startTime = null;
+          }
+        } else {
+          // instant reset
+          uncompBar.style.transition = 'none';
+          compBar.style.transition = 'none';
+          uncompBar.style.width = '0%';
+          compBar.style.width = '0%';
+          uncompLabel.textContent = '0K keys';
+          compLabel.textContent = '0K keys';
+          // Re-enable transition after a frame
+          requestAnimationFrame(() => {
+            uncompBar.style.transition = 'width 60ms linear';
+            compBar.style.transition = 'width 60ms linear';
+            phase = 'fill';
+            startTime = null;
+            animFrame = requestAnimationFrame(tick);
+          });
+          return;
+        }
+        animFrame = requestAnimationFrame(tick);
+      }
+
+      // Only animate when card is visible (IntersectionObserver)
+      const card = document.getElementById('quant-card');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            if (!animFrame) animFrame = requestAnimationFrame(tick);
+          } else {
+            if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+            phase = 'fill'; startTime = null;
+            uncompBar.style.width = '0%'; compBar.style.width = '0%';
+            uncompLabel.textContent = '0K keys'; compLabel.textContent = '0K keys';
+          }
+        });
+      }, { threshold: 0.3 });
+      if (card) observer.observe(card);
+    })();
+  </script>
+
+  <!-- INTERACTIVE SIMULATOR LOGIC -->
+
+  <script>
+    const promptsData = {
+      "What is the capital of India?": {
+        response: "The capital of India is New Delhi. It serves as the seat of all three branches of the government of India.",
+        latency: 2045,
+        tokens: 68,
+        cost: 0.08
+      },
+      "Can you tell me India's capital?": {
+        response: "The capital of India is New Delhi. It serves as the seat of all three branches of the government of India.",
+        latency: 8,
+        tokens: 68,
+        cost: 0.08
+      }
+    };
+
+    let metrics = {
+      savedTokens: 0,
+      savedCost: 0.00,
+      hits: 0,
+      misses: 0
+    };
+
+    const consoleEl = document.getElementById('sim-console');
+    const inputEl = document.getElementById('sim-input');
+    const sendBtn = document.getElementById('sim-send-btn');
+    const promptABtn = document.getElementById('prompt-a-btn');
+    const promptBBtn = document.getElementById('prompt-b-btn');
+
+    const statStatus = document.getElementById('stat-status');
+    const statLatency = document.getElementById('stat-latency');
+    const statCost = document.getElementById('stat-saved-cost');
+    const vectorScore = document.getElementById('vector-score');
+    const dynamicNodesG = document.getElementById('dynamic-vector-nodes');
+
+    function appendConsoleRow(promptText, resultData, isHit) {
+      const row = document.createElement('div');
+      row.className = 'console-row';
+      
+      const promptDiv = document.createElement('div');
+      promptDiv.className = 'console-prompt';
+      promptDiv.textContent = `ec.ask("${promptText}", mockLLM)`;
+      row.appendChild(promptDiv);
+
+      const statusDiv = document.createElement('div');
+      statusDiv.className = 'console-status-line';
+      
+      const badge = document.createElement('span');
+      badge.className = `status-badge ${isHit ? 'hit' : 'miss'}`;
+      badge.textContent = isHit ? 'Cache HIT' : 'Cache MISS';
+      statusDiv.appendChild(badge);
+
+      const statusText = document.createElement('span');
+      statusText.style.color = '#71717a';
+      statusText.textContent = isHit 
+        ? `Vector Match Found (0.94 Similarity). Served in ${resultData.latency}ms.` 
+        : `Calling API... Done. Latency: ${resultData.latency}ms. Syncing to Qdrant.`;
+      statusDiv.appendChild(statusText);
+      row.appendChild(statusDiv);
+
+      const responseDiv = document.createElement('div');
+      responseDiv.className = 'console-response';
+      responseDiv.textContent = resultData.response;
+      row.appendChild(responseDiv);
+
+      consoleEl.appendChild(row);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    async function executeSimulation(promptVal, isHit) {
+      const loaderDiv = document.createElement('div');
+      loaderDiv.className = 'console-row';
+      loaderDiv.innerHTML = `<div class="console-prompt">ec.ask("${promptVal}", mockLLM)</div><div style="color: var(--color-text-dim)">Checking cache indexes...</div>`;
+      consoleEl.appendChild(loaderDiv);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+
+      let tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tempLine.setAttribute('x1', '100');
+      tempLine.setAttribute('y1', '100');
+      tempLine.setAttribute('x2', isHit ? '72' : '60');
+      tempLine.setAttribute('y2', isHit ? '138' : '140');
+      tempLine.setAttribute('stroke', 'var(--color-primary)');
+      tempLine.setAttribute('stroke-dasharray', '4,4');
+      tempLine.setAttribute('stroke-width', '1.5');
+      dynamicNodesG.appendChild(tempLine);
+
+      await new Promise(r => setTimeout(r, isHit ? 400 : 1600));
+
+      consoleEl.removeChild(loaderDiv);
+      dynamicNodesG.removeChild(tempLine);
+
+      const matchedData = promptsData[promptVal];
+
+      appendConsoleRow(promptVal, matchedData, isHit);
+
+      if (isHit) {
+        metrics.hits += 1;
+        metrics.savedCost += 0.08;
+
+        statStatus.innerHTML = '<span class="status-badge hit">HIT</span>';
+        statLatency.innerHTML = `${matchedData.latency} <span class="stat-unit">ms</span>`;
+        statLatency.className = 'stat-value stat-latency saving';
+        vectorScore.innerText = "0.94 (Match)";
+        vectorScore.style.color = "var(--color-primary)";
+
+        const greenNode = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        greenNode.setAttribute('cx', '72');
+        greenNode.setAttribute('cy', '138');
+        greenNode.setAttribute('r', '5');
+        greenNode.setAttribute('fill', 'var(--color-primary)');
+        dynamicNodesG.appendChild(greenNode);
+
+        const dottedLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        dottedLine.setAttribute('x1', '60');
+        dottedLine.setAttribute('y1', '140');
+        dottedLine.setAttribute('x2', '72');
+        dottedLine.setAttribute('y2', '138');
+        dottedLine.setAttribute('stroke', 'var(--color-primary)');
+        dottedLine.setAttribute('stroke-width', '1.5');
+        dottedLine.setAttribute('stroke-dasharray', '2,2');
+        dynamicNodesG.appendChild(dottedLine);
+
+        const textTag = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textTag.setAttribute('x', '80');
+        textTag.setAttribute('y', '135');
+        textTag.setAttribute('fill', 'var(--color-primary)');
+        textTag.setAttribute('font-size', '8');
+        textTag.setAttribute('font-family', 'var(--font-mono)');
+        textTag.textContent = 'hit: 0.94';
+        dynamicNodesG.appendChild(textTag);
+
+      } else {
+        metrics.misses += 1;
+
+        statStatus.innerHTML = '<span class="status-badge miss">MISS</span>';
+        statLatency.innerHTML = `2.04 <span class="stat-unit">s</span>`;
+        statLatency.className = 'stat-value stat-latency slow';
+        vectorScore.innerText = "0.12 (No Match)";
+        vectorScore.style.color = "var(--color-error)";
+
+        const redNode = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        redNode.setAttribute('cx', '60');
+        redNode.setAttribute('cy', '140');
+        redNode.setAttribute('r', '5');
+        redNode.setAttribute('fill', 'var(--color-error)');
+        dynamicNodesG.appendChild(redNode);
+
+        const textTag = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textTag.setAttribute('x', '30');
+        textTag.setAttribute('y', '155');
+        textTag.setAttribute('fill', 'var(--color-error)');
+        textTag.setAttribute('font-size', '8');
+        textTag.setAttribute('font-family', 'var(--font-mono)');
+        textTag.textContent = 'stored: prompt_a';
+        dynamicNodesG.appendChild(textTag);
+
+        promptBBtn.removeAttribute('disabled');
+      }
+
+      statCost.innerText = `$${metrics.savedCost.toFixed(2)}`;
+    }
+
+    async function runPrompt(index) {
+      if (index === 0) {
+        promptABtn.disabled = true;
+        promptABtn.classList.remove('pulse-btn');
+        await executeSimulation("What is the capital of India?", false);
+        
+        // Highlight next step to prompt user action
+        promptBBtn.classList.add('pulse-btn');
+        const instruct = document.createElement('div');
+        instruct.className = 'console-row';
+        instruct.style.color = 'var(--color-primary)';
+        instruct.style.marginTop = '8px';
+        instruct.style.fontWeight = '500';
+        instruct.textContent = '// ACTION REQUIRED: Click "Can you tell me India\'s capital?" in the sidebar to simulate semantic Cache HIT.';
+        consoleEl.appendChild(instruct);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      } else {
+        promptBBtn.disabled = true;
+        promptBBtn.classList.remove('pulse-btn');
+        await executeSimulation("Can you tell me India's capital?", true);
+        
+        // Final success confirmation
+        const complete = document.createElement('div');
+        complete.className = 'console-row';
+        complete.style.color = 'var(--color-primary)';
+        complete.style.marginTop = '8px';
+        complete.style.fontWeight = '500';
+        complete.textContent = '// DEMO COMPLETE: Caching cycle verified. 82% token cost reduction, 250x faster responses.';
+        consoleEl.appendChild(complete);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+    }
+
+    // FAQ Accordion Interactivity
+    function toggleFaq(btn) {
+      const item = btn.parentElement;
+      item.classList.toggle('active');
+    }
+
+    // Pricing Billing Toggle
+    let isAnnual = false;
+    function toggleBilling() {
+      isAnnual = !isAnnual;
+      const thumb = document.getElementById('toggle-thumb');
+      const monthlyLabel = document.getElementById('toggle-monthly-label');
+      const annualLabel = document.getElementById('toggle-annual-label');
+
+      thumb.style.transform = isAnnual ? 'translateX(20px)' : 'translateX(0)';
+      monthlyLabel.style.color = isAnnual ? 'var(--color-text-dim)' : 'var(--color-text)';
+      annualLabel.style.color = isAnnual ? 'var(--color-text)' : 'var(--color-text-dim)';
+
+      document.querySelectorAll('.pricing-amount[data-monthly]').forEach(el => {
+        const val = isAnnual ? el.dataset.annual : el.dataset.monthly;
+        el.textContent = val;
+      });
+    }
+
+    // Code Tabs Toggle
+    function toggleCodeTab(tab) {
+      const btnNode = document.querySelector('[onclick="toggleCodeTab(\'node\')"]');
+      const btnInstall = document.querySelector('[onclick="toggleCodeTab(\'install\')"]');
+      const contentNode = document.getElementById('code-content-node');
+      const contentInstall = document.getElementById('code-content-install');
+
+      if (tab === 'node') {
+        btnNode.classList.add('active');
+        btnInstall.classList.remove('active');
+        contentNode.style.display = 'block';
+        contentInstall.style.display = 'none';
+      } else {
+        btnNode.classList.remove('active');
+        btnInstall.classList.add('active');
+        contentNode.style.display = 'none';
+        contentInstall.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <!-- Left Arcs (Original Wave / Autoencoder funnel-in) -->
+  <path d="M 18.9 18.9 A 44 44 0 0 0 18.9 81.1" fill="none" stroke="#ff3355" stroke-width="6" stroke-linecap="round" opacity="0.4" />
+  <path d="M 27.4 27.4 A 32 32 0 0 0 27.4 72.6" fill="none" stroke="#ff3355" stroke-width="6" stroke-linecap="round" opacity="0.7" />
+  <path d="M 35.8 35.8 A 20 20 0 0 0 35.8 64.1" fill="none" stroke="#ff3355" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Center Bottleneck (Vector Latent Node) -->
+  <circle cx="50" cy="50" r="5" fill="#ffffff" />
+
+  <!-- Right Arcs (Reflected Echo Wave / Autoencoder funnel-out) -->
+  <path d="M 64.1 35.8 A 20 20 0 0 1 64.1 64.1" fill="none" stroke="#00e676" stroke-width="6" stroke-linecap="round" />
+  <path d="M 72.6 27.4 A 32 32 0 0 1 72.6 72.6" fill="none" stroke="#00e676" stroke-width="6" stroke-linecap="round" opacity="0.7" />
+  <path d="M 81.1 18.9 A 44 44 0 0 1 81.1 81.1" fill="none" stroke="#00e676" stroke-width="6" stroke-linecap="round" opacity="0.4" />
+</svg>
