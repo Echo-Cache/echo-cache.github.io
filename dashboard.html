@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Dashboard — EchoCache</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Dashboard specific overrides */
+    body {
+      background-color: #060607;
+      color: var(--color-text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 100px auto 40px auto;
+      padding: 0 24px;
+      width: 100%;
+      flex-grow: 1;
+    }
+    
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 20px;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .profile-avatar {
+      width: 40px;
+      height: 40px;
+      background-color: var(--color-primary-glow);
+      border: 1px solid var(--color-primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+    
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    
+    .dash-card {
+      background-color: var(--color-surface-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .dash-card-title {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--color-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .dash-card-value {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    
+    .dash-card-subtext {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+    
+    .panel {
+      background-color: var(--color-surface-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 24px;
+    }
+    
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    /* API Keys Table */
+    .keys-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background-color: #0b0b0c;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+    }
+    
+    .key-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .key-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .key-preview {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+    
+    .btn-danger {
+      background-color: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.2);
+      color: var(--color-error);
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    
+    .btn-danger:hover {
+      background-color: var(--color-error);
+      color: var(--color-bg);
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background-color: var(--color-surface-card);
+      border: 1px solid var(--color-border);
+      padding: 32px;
+      border-radius: var(--radius-sm);
+      max-width: 500px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .key-display-box {
+      background-color: #000;
+      border: 1px dashed var(--color-primary);
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-primary);
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    /* Pricing Gating Display */
+    .plan-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+    }
+    
+    .plan-DEMO { color: var(--color-text-dim); background-color: var(--color-zinc-800); }
+    .plan-STARTER { color: var(--color-primary); background-color: var(--color-primary-glow); }
+    .plan-SCALE { color: var(--color-accent); background-color: var(--color-accent-glow); }
+    
+    .upgrade-box {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--color-border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container nav-wrapper">
+      <div class="logo" onclick="window.location.href='index.html'" style="cursor: pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 60 60" fill="none">
+          <path d="M 14 46 Q 12 22 34 12" stroke="#8DB355" stroke-width="4" stroke-linecap="round" fill="none"/>
+          <circle cx="14" cy="46" r="5.5" fill="#8DB355"/>
+          <circle cx="34" cy="12" r="6.5" fill="#FFEA93"/>
+        </svg>
+        <span>EchoCache</span>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#features">Features</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button onclick="signOut()" class="btn btn-secondary">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- DASHBOARD WRAPPER -->
+  <div class="dashboard-container">
+    <div class="dash-header">
+      <div>
+        <h1 style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">Developer Dashboard</h1>
+        <p style="color: var(--color-text-muted); font-size: 14px; margin-top: 4px;">Manage API credentials and monitor cache efficiency metrics.</p>
+      </div>
+      <div class="user-profile">
+        <div class="profile-avatar" id="avatar-char">D</div>
+        <div>
+          <div style="font-weight: 600;" id="user-name">Developer</div>
+          <div style="font-size: 12px; color: var(--color-text-dim);" id="user-email">email@example.com</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS BLOCKS -->
+    <div class="dash-grid">
+      <div class="dash-card">
+        <span class="dash-card-title">Estimated Savings</span>
+        <span class="dash-card-value" style="color: var(--color-primary);" id="stat-savings">$0.00</span>
+        <span class="dash-card-subtext" id="stat-savings-desc">Saved by resolving cache hits locally.</span>
+      </div>
+      <div class="dash-card">
+        <span class="dash-card-title">Requests this month</span>
+        <span class="dash-card-value" id="stat-requests">0</span>
+        <span class="dash-card-subtext" id="stat-requests-limit">Limit: 1,000 requests</span>
+      </div>
+      <div class="dash-card">
+        <span class="dash-card-title">Stored Cache Entries</span>
+        <span class="dash-card-value" id="stat-entries">0</span>
+        <span class="dash-card-subtext" id="stat-entries-limit">Limit: 200 items</span>
+      </div>
+    </div>
+
+    <!-- MAIN SECTIONS -->
+    <div class="dashboard-layout">
+      <!-- Left: Chart & Keys -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="panel">
+          <div class="panel-title">Cache Hits vs Misses</div>
+          <div style="height: 250px; position: relative;">
+            <canvas id="usageChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            API Keys
+            <button onclick="openCreateKeyModal()" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">+ Create Key</button>
+          </div>
+          <div class="keys-list" id="keys-container">
+            <!-- Dynamic Keys List -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Subscription / Plan Details -->
+      <div class="panel" style="height: fit-content;">
+        <div class="panel-title">Your Plan</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <span style="font-weight: 600; font-size: 15px;">Active Subscription</span>
+          <span class="plan-badge plan-DEMO" id="plan-badge-value">Demo</span>
+        </div>
+        <p style="color: var(--color-text-muted); font-size: 13px; line-height: 1.5;" id="plan-limits-description">
+          You are currently running on the Demo tier. Enjoy 1,000 requests/mo and 200 stored cache points.
+        </p>
+
+        <div class="upgrade-box" id="upgrade-options">
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px;">Upgrade Tier</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button onclick="upgradePlan('STARTER')" class="btn btn-secondary" style="width: 100%; justify-content: center;">Upgrade to Starter (₹749/mo)</button>
+            <button onclick="upgradePlan('SCALE')" class="btn btn-secondary" style="width: 100%; justify-content: center;">Upgrade to Scale (₹4,099/mo)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY CREATION MODAL -->
+  <div class="modal" id="key-modal">
+    <div class="modal-content">
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">New API Key Generated</h3>
+      <p style="color: var(--color-text-muted); font-size: 13px; line-height: 1.4;">
+        For security, this key is shown <strong>only once</strong>. Copy it immediately and save it in your environment configurations.
+      </p>
+      <div class="key-display-box">
+        <span id="generated-key-val">ec_prod_...</span>
+        <span onclick="copyGeneratedKey()" style="cursor: pointer; font-size: 11px; text-decoration: underline;">Copy</span>
+      </div>
+      <button onclick="closeKeyModal()" class="btn btn-primary" style="margin-top: 12px;">I've Copied the Key</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="margin-top: 80px; border-top: 1px solid var(--color-border); padding: 24px 0; text-align: center; color: var(--color-text-dim); font-size: 12px;">
+    &copy; 2026 EchoCache. All rights reserved.
+  </footer>
+
+  <script>
+    const API_BASE = "http://localhost:3000";
+    
+    // Auth Check
+    let token = localStorage.getItem("echocache_token");
+    
+    // Handle redirect token from OAuth callback (dashboard.html?token=xxx)
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectToken = urlParams.get("token");
+    if (redirectToken) {
+      localStorage.setItem("echocache_token", redirectToken);
+      token = redirectToken;
+      // Clean URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    if (!token) {
+      // Not authenticated, redirect to landing
+      window.location.href = "index.html";
+    }
+
+    // Sign Out
+    function signOut() {
+      localStorage.removeItem("echocache_token");
+      window.location.href = "index.html";
+    }
+
+    // Copy Key Handler
+    function copyGeneratedKey() {
+      const val = document.getElementById("generated-key-val").textContent;
+      navigator.clipboard.writeText(val);
+      alert("API Key copied to clipboard!");
+    }
+
+    function openCreateKeyModal() {
+      const keyName = prompt("Enter a name for this API Key:", "Production Key");
+      if (keyName === null) return;
+      
+      fetch(`${API_BASE}/api/keys`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: keyName })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to generate key");
+        return res.json();
+      })
+      .then(data => {
+        document.getElementById("generated-key-val").textContent = data.key;
+        document.getElementById("key-modal").style.display = "flex";
+        loadKeys(); // reload list in background
+      })
+      .catch(err => alert(err.message));
+    }
+
+    function closeKeyModal() {
+      document.getElementById("key-modal").style.display = "none";
+    }
+
+    // Revoke Key Handler
+    function revokeKey(keyId) {
+      if (!confirm("Are you sure you want to revoke this API Key? Any client application using this key will immediately fail validation checks.")) return;
+      
+      fetch(`${API_BASE}/api/keys/${keyId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to revoke key");
+        loadKeys();
+      })
+      .catch(err => alert(err.message));
+    }
+
+    // Upgrade Plan Handler (Razorpay checkout redirect)
+    function upgradePlan(targetPlan) {
+      fetch(`${API_BASE}/api/billing/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": currentUserId, // backend extracts this in prod from JWT session context, here we pass headers or let it resolve
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ plan: targetPlan })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Checkout session creation failed");
+        return res.json();
+      })
+      .then(data => {
+        if (data.short_url) {
+          // Redirect user directly to Razorpay hosted checkout page
+          window.location.href = data.short_url;
+        } else {
+          alert("Failed to initialize checkout link");
+        }
+      })
+      .catch(err => alert(err.message));
+    }
+
+    let currentUserId = "";
+
+    // Load User Usage & Keys Metrics
+    function loadUsage() {
+      fetch(`${API_BASE}/api/usage`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Session expired. Please sign in again.");
+        return res.json();
+      })
+      .then(data => {
+        currentUserId = data.user.id;
+        document.getElementById("user-name").textContent = data.user.name || "Developer";
+        document.getElementById("user-email").textContent = data.user.email;
+        document.getElementById("avatar-char").textContent = (data.user.name || "D").charAt(0).toUpperCase();
+
+        // Stats boxes
+        document.getElementById("stat-savings").textContent = `$${data.stats.estimatedSavingsUsd.toFixed(2)}`;
+        
+        const savingsUsd = data.stats.estimatedSavingsUsd;
+        const savingsInr = savingsUsd * 83; // rough exchange rate
+        document.getElementById("stat-savings-desc").textContent = `Saved you ~₹${savingsInr.toFixed(0)} in LLM endpoint charges.`;
+
+        // Requests count
+        document.getElementById("stat-requests").textContent = data.stats.requestsThisMonth.toLocaleString();
+        const reqLimitText = data.planLimits.requestsPerMonth === Infinity ? "Unlimited" : `${data.planLimits.requestsPerMonth.toLocaleString()} max`;
+        document.getElementById("stat-requests-limit").textContent = `Plan Limit: ${reqLimitText}`;
+
+        // Stored entries
+        document.getElementById("stat-entries").textContent = data.stats.entriesStored.toLocaleString();
+        document.getElementById("stat-entries-limit").textContent = `Plan Limit: ${data.planLimits.maxEntries.toLocaleString()} items`;
+
+        // Plan badges
+        const badge = document.getElementById("plan-badge-value");
+        badge.textContent = data.user.plan;
+        badge.className = `plan-badge plan-${data.user.plan}`;
+
+        // Description
+        const descEl = document.getElementById("plan-limits-description");
+        if (data.user.plan === "DEMO") {
+          descEl.textContent = "You are currently running on the Demo tier. Enjoy 1,000 cache requests/mo and 200 stored cache points.";
+          document.getElementById("upgrade-options").style.display = "block";
+        } else if (data.user.plan === "STARTER") {
+          descEl.textContent = "Starter plan active. Enjoy 50,000 cache requests/mo and 5,000 stored cache points.";
+          document.getElementById("upgrade-options").style.display = "block";
+        } else {
+          descEl.textContent = "Scale plan active. Enjoy 500,000 cache requests/mo and 50,000 stored cache points.";
+          document.getElementById("upgrade-options").style.display = "none";
+        }
+
+        // Initialize Chart
+        renderChart(data.stats.requestsThisMonth, data.stats.requestsThisMonth * 0.76); // mock hits/misses for illustration
+      })
+      .catch(err => {
+        console.error(err);
+        signOut();
+      });
+    }
+
+    function loadKeys() {
+      fetch(`${API_BASE}/api/keys`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(keys => {
+        const container = document.getElementById("keys-container");
+        if (keys.length === 0) {
+          container.innerHTML = `<div style="text-align: center; color: var(--color-text-dim); font-size: 13px; padding: 24px 0;">No active API keys. Click "+ Create Key" to start.</div>`;
+          return;
+        }
+
+        container.innerHTML = keys.map(key => `
+          <div class="key-row">
+            <div class="key-info">
+              <span class="key-name">${key.name}</span>
+              <span class="key-preview">${key.keyPrefix}************************</span>
+            </div>
+            <button onclick="revokeKey('${key.id}')" class="btn-danger">Revoke</button>
+          </div>
+        `).join("");
+      })
+      .catch(err => console.error("Failed to load keys:", err));
+    }
+
+    // Chart.js rendering
+    let chartInstance = null;
+    function renderChart(requests, hits) {
+      const ctx = document.getElementById('usageChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const misses = Math.max(0, requests - hits);
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Cache Hits (Instant)', 'Cache Misses (LLM Calls)'],
+          datasets: [{
+            data: [hits, misses],
+            backgroundColor: ['#8DB355', '#2a2a2e'],
+            borderColor: ['#060607', '#060607'],
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#8b8e99',
+                font: { family: 'Inter, system-ui' }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Initial page load
+    loadUsage();
+    loadKeys();
+  </script>
+</body>
+</html>

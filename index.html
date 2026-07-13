@@ -36,9 +36,11 @@
           <li><a href="#code">SDK Integration</a></li>
           <li><a href="#pricing">Pricing</a></li>
           <li><a href="#faq">FAQ</a></li>
+          <li><a href="dashboard.html" class="nav-dashboard-link" style="display: none;">Dashboard</a></li>
         </ul>
       </nav>
       <div class="nav-actions">
+        <a href="http://localhost:3000/api/auth/github" class="btn btn-secondary login-btn" style="padding: 6px 12px; font-size: 13px; margin-right: 8px;">Sign In</a>
         <a href="#pricing" class="btn btn-primary">Get Started</a>
       </div>
     </div>
@@ -1176,6 +1178,28 @@ yarn add echocache-node</code></pre>
         contentInstall.style.display = 'block';
       }
     }
+
+    // Toggle nav states if user is logged in
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem("echocache_token");
+      if (token) {
+        // Show dashboard link
+        const dashLink = document.querySelector(".nav-dashboard-link");
+        if (dashLink) dashLink.parentElement.style.display = "block";
+
+        // Change sign in button to Sign Out
+        const signInBtn = document.querySelector(".login-btn");
+        if (signInBtn) {
+          signInBtn.textContent = "Sign Out";
+          signInBtn.href = "#";
+          signInBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.removeItem("echocache_token");
+            window.location.reload();
+          });
+        }
+      }
+    });
   </script>
 </body>
 </html>
