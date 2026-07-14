@@ -6,6 +6,7 @@
   <title>Developer Dashboard — EchoCache</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     /* Dashboard specific overrides */
     body {
@@ -347,7 +348,7 @@
   </footer>
 
   <script>
-    const API_BASE = "http://localhost:3000";
+    const API_BASE = "http://localhost:9000";
     
     // Auth Check
     let token = localStorage.getItem("echocache_token");
@@ -425,30 +426,81 @@
       .catch(err => alert(err.message));
     }
 
-    // Upgrade Plan Handler (Razorpay checkout redirect)
+    // Upgrade Plan Handler (Razorpay Standard Checkout)
     function upgradePlan(targetPlan) {
-      fetch(`${API_BASE}/api/billing/checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": currentUserId, // backend extracts this in prod from JWT session context, here we pass headers or let it resolve
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ plan: targetPlan })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Checkout session creation failed");
-        return res.json();
-      })
-      .then(data => {
-        if (data.short_url) {
-          // Redirect user directly to Razorpay hosted checkout page
-          window.location.href = data.short_url;
-        } else {
-          alert("Failed to initialize checkout link");
-        }
-      })
-      .catch(err => alert(err.message));
+      // Fetch public Razorpay key ID
+      fetch(`${API_BASE}/api/billing/public-key`)
+        .then(r => r.json())
+        .then(keyData => {
+          if (!keyData.key_id) throw new Error('Razorpay Key ID not available');
+          // Create order on backend
+          return fetch(`${API_BASE}/api/billing/create-order`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ plan: targetPlan })
+          })
+          .then(res => { if (!res.ok) throw new Error('Order creation failed'); return res.json(); })
+          .then(order => ({ keyId: keyData.key_id, order }));
+        })
+        .then(({ keyId, order }) => {
+          const options = {
+            key: keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "EchoCache",
+            description: `${targetPlan} Plan`,
+            order_id: order.id,
+            handler: function (response) {
+              // Verify payment and upgrade plan in DB
+              fetch(`${API_BASE}/api/billing/verify-payment`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  plan: targetPlan,
+                  user_id: currentUserId
+                })
+              })
+              .then(r => r.json())
+              .then(v => {
+                if (v.status === "success") {
+                  // Update plan badge and description immediately
+                  const badge = document.getElementById('plan-badge-value');
+                  badge.textContent = targetPlan;
+                  badge.className = `plan-badge plan-${targetPlan}`;
+                  const descEl = document.getElementById('plan-limits-description');
+                  if (targetPlan === 'STARTER') {
+                    descEl.textContent = 'Starter plan active. Enjoy 50,000 cache requests/mo and 5,000 stored cache points.';
+                  } else {
+                    descEl.textContent = 'Scale plan active. Enjoy 500,000 cache requests/mo and 50,000 stored cache points.';
+                    document.getElementById('upgrade-options').style.display = 'none';
+                  }
+                  alert(`🎉 Payment successful! You are now on the ${targetPlan} plan.`);
+                } else {
+                  alert("Payment verification failed. Please contact support.");
+                }
+              })
+              .catch(err => alert('Verification error: ' + err.message));
+            },
+            modal: { escape: false },
+            prefill: {
+              email: document.getElementById('user-email').textContent,
+              name: document.getElementById('user-name').textContent
+            },
+            theme: { color: "#8DB355" }
+          };
+          const rzp = new Razorpay(options);
+          rzp.open();
+        })
+        .catch(err => alert(err.message));
     }
 
     let currentUserId = "";
